@@ -9,7 +9,7 @@ services:
     container_name: zuzol-badanie
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "67:8080"
     volumes:
       # Persist CSV results and generated Excel outside the container
       - zuzol-data:/app/data

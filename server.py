@@ -111,7 +111,40 @@ def data_to_row(data, headers):
 
 
 class StudyRequestHandler(http.server.SimpleHTTPRequestHandler):
-    """Custom handler: serves static files + handles POST /api/save-results."""
+    """Custom handler: serves static files + handles API endpoints."""
+
+    def do_GET(self):
+        parsed = urlparse(self.path)
+
+        if parsed.path == '/api/download/csv':
+            self.handle_download(CSV_FILE, 'text/csv', 'wyniki_badania.csv')
+        elif parsed.path == '/api/download/excel':
+            self.handle_download(EXCEL_FILE,
+                                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                                 'wyniki_badania_sformatowane.xlsx')
+        else:
+            # Default: serve static files (index.html, js/, css/)
+            super().do_GET()
+
+    def handle_download(self, filepath, content_type, filename):
+        """Serve a file for download."""
+        if not os.path.isfile(filepath):
+            response = json.dumps({'success': False, 'message': 'Plik jeszcze nie istnieje. Brak wyników.'})
+            self.send_response(404)
+            self.send_header('Content-Type', 'application/json; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(response.encode('utf-8'))
+            return
+
+        with open(filepath, 'rb') as f:
+            data = f.read()
+
+        self.send_response(200)
+        self.send_header('Content-Type', content_type)
+        self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def do_POST(self):
         parsed = urlparse(self.path)
