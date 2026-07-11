@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Badanie reprodukcji czasu u osób z ADHD — procedura Barkleya. Aplikacja do pracy magisterskiej.">
+    <title>Badanie Reprodukcji Czasu — ADHD</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
+        <div id="progress-text">Etap 1 z 5</div>
+    </div>
+
+    <!-- ==================== WELCOME ==================== -->
+    <section id="welcome" class="section active">
+        <div class="card card-wide fade-in">
+            <div class="card-icon">🧠</div>
+            <h1>Badanie Reprodukcji Czasu</h1>
+            <p class="subtitle">Badanie naukowe na potrzeby pracy magisterskiej</p>
+            <div class="info-box">
+                <p>Dziękujemy za zainteresowanie udziałem w badaniu. Składa się ono z kilku etapów:</p>
+                <ol>
+                    <li>Dane demograficzne</li>
+                    <li>Kwestionariusz ASRS v1.1 (18 pytań)</li>
+                    <li>Kwestionariusz Zwlekania (40 pytań)</li>
+                    <li>Zadanie eksperymentalne — reprodukcja czasu (8 prób)</li>
+                </ol>
+                <p>Całe badanie zajmie około <strong>20–30 minut</strong>.</p>
+                <p>Twoje dane są <strong>anonimowe</strong> i będą wykorzystane wyłącznie do celów naukowych.</p>
+                <p class="text-muted">Do wykonania zadania eksperymentalnego potrzebna jest <strong>klawiatura</strong> (klawisz SPACJA).</p>
+            </div>
+            <button id="btn-start" class="btn btn-primary">Rozpocznij badanie</button>
+        </div>
+    </section>
+
+    <!-- ==================== DEMOGRAPHIC ==================== -->
+    <section id="demographic" class="section">
+        <div class="card fade-in">
+            <h2>Dane demograficzne</h2>
+            <p class="section-desc">Proszę uzupełnić poniższe informacje.</p>
+            <form id="demographic-form" novalidate>
+                <div class="form-group">
+                    <label for="age">Wiek</label>
+                    <input type="number" id="age" min="18" max="99" placeholder="np. 25" required>
+                    <span class="error-msg" id="age-error"></span>
+                </div>
+                <div class="form-group">
+                    <label>Płeć</label>
+                    <div class="radio-group" id="gender-group">
+                        <label class="radio-label">
+                            <input type="radio" name="gender" value="kobieta" required>
+                            <span class="radio-custom"></span>
+                            Kobieta
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="gender" value="mezczyzna">
+                            <span class="radio-custom"></span>
+                            Mężczyzna
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="gender" value="inna">
+                            <span class="radio-custom"></span>
+                            Inna / Wolę nie podawać
+                        </label>
+                    </div>
+                    <span class="error-msg" id="gender-error"></span>
+                </div>
+                <div class="form-group">
+                    <label for="education">Wykształcenie</label>
+                    <select id="education" required>
+                        <option value="" disabled selected>Wybierz...</option>
+                        <option value="podstawowe">Podstawowe</option>
+                        <option value="srednie">Średnie</option>
+                        <option value="wyzsze_licencjat">Wyższe (licencjat / inżynier)</option>
+                        <option value="wyzsze_magister">Wyższe (magister)</option>
+                        <option value="wyzsze_doktor">Wyższe (doktor lub więcej)</option>
+                    </select>
+                    <span class="error-msg" id="education-error"></span>
+                </div>
+                <div class="form-group">
+                    <label>Czy posiadasz diagnozę ADHD?</label>
+                    <div class="radio-group" id="adhd-diagnosis-group">
+                        <label class="radio-label">
+                            <input type="radio" name="adhd-diagnosis" value="tak" required>
+                            <span class="radio-custom"></span>
+                            Tak
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="adhd-diagnosis" value="nie">
+                            <span class="radio-custom"></span>
+                            Nie
+                        </label>
+                    </div>
+                    <span class="error-msg" id="adhd-diagnosis-error"></span>
+                </div>
+                <div class="form-group">
+                    <label>Czy przyjmujesz leki na ADHD?</label>
+                    <div class="radio-group" id="adhd-medication-group">
+                        <label class="radio-label">
+                            <input type="radio" name="adhd-medication" value="tak" required>
+                            <span class="radio-custom"></span>
+                            Tak
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="adhd-medication" value="nie">
+                            <span class="radio-custom"></span>
+                            Nie
+                        </label>
+                    </div>
+                    <span class="error-msg" id="adhd-medication-error"></span>
+                </div>
+                <button type="submit" class="btn btn-primary">Dalej</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- ==================== ASRS ==================== -->
+    <section id="asrs" class="section">
+        <div class="card card-wide fade-in">
+            <h2>Kwestionariusz ASRS v1.1</h2>
+            <p class="section-desc">Adult ADHD Self-Report Scale (tłumaczenie: Monika Szaniawska)<br>
+            Proszę odpowiedzieć na poniższe pytania. Wybierz opcję, która najlepiej charakteryzuje Twoje uczucia i zachowania <strong>w ciągu ostatnich 6 miesięcy</strong>.</p>
+            
+            <div id="asrs-part-a">
+                <h3 class="part-label">Część A</h3>
+                <div id="asrs-questions-a"></div>
+            </div>
+            <div id="asrs-part-b">
+                <h3 class="part-label">Część B</h3>
+                <div id="asrs-questions-b"></div>
+            </div>
+
+            <span class="error-msg" id="asrs-error"></span>
+            <button id="btn-asrs-next" class="btn btn-primary">Dalej</button>
+        </div>
+    </section>
+
+    <!-- ==================== ZWLEKANIE ==================== -->
+    <section id="zwlekanie" class="section">
+        <div class="card card-wide fade-in">
+            <h2>Kwestionariusz Zwlekania</h2>
+            <p class="section-desc">Poniżej znajduje się 40 stwierdzeń. Proszę zaznaczyć przy każdym stwierdzeniu, w jakim stopniu ono Panią/Pana charakteryzuje.</p>
+            <div class="scale-legend">
+                <span>1 — Zupełnie taki/a nie jestem</span>
+                <span>2 — Raczej taki/a nie jestem</span>
+                <span>3 — Trudno powiedzieć</span>
+                <span>4 — Trochę taki/a jestem</span>
+                <span>5 — Właśnie taki/a jestem</span>
+            </div>
+            <div id="zwlekanie-questions"></div>
+            <span class="error-msg" id="zwlekanie-error"></span>
+            <button id="btn-zwlekanie-next" class="btn btn-primary">Dalej</button>
+        </div>
+    </section>
+
+    <!-- ==================== EXPERIMENT INTRO ==================== -->
+    <section id="experiment-intro" class="section">
+        <div class="card card-wide fade-in">
+            <div class="card-icon">⏱️</div>
+            <h2>Zadanie eksperymentalne</h2>
+            <h3>Reprodukcja czasu</h3>
+            <div class="info-box">
+                <p>W kolejnym etapie Twoim zadaniem będzie <strong>zapamiętanie długości prezentowanego interwału czasowego</strong>, a następnie jego <strong>odtworzenie</strong>.</p>
+                <h4>Przebieg każdej próby:</h4>
+                <ol>
+                    <li>Na ekranie pojawi się komunikat <strong>„Przygotuj się"</strong>.</li>
+                    <li>Pojawi się <strong>bodziec wizualny</strong> (koło) — zapamiętaj, jak długo jest wyświetlany.</li>
+                    <li>Po zniknięciu bodźca pojawi się komunikat <strong>„Odtwórz ten sam czas"</strong>.</li>
+                    <li>Naciśnij klawisz <kbd>SPACJA</kbd>, aby <strong>rozpocząć</strong> odtwarzanie czasu.</li>
+                    <li>Gdy uznasz, że upłynął taki sam czas jak wcześniej — naciśnij <kbd>SPACJA</kbd> ponownie.</li>
+                </ol>
+                <p>Wykonasz łącznie <strong>8 prób</strong>.</p>
+
+                <div class="warning-box">
+                    <strong>⚠️ Ważne:</strong> Nie korzystaj z żadnych zegarków, stoperów ani innych pomocy. Polegaj wyłącznie na swoim wewnętrznym wyczuciu czasu. Nie licz w myślach sekund.
+                </div>
+
+                <p>Najpierw wykonasz <strong>1 próbę ćwiczeniową</strong>, która nie będzie uwzględniona w wynikach.</p>
+            </div>
+            <button id="btn-start-experiment" class="btn btn-primary btn-large">Rozpocznij zadanie</button>
+        </div>
+    </section>
+
+    <!-- ==================== EXPERIMENT ==================== -->
+    <section id="experiment" class="section experiment-fullscreen">
+        <div id="experiment-progress">
+            <span id="trial-counter">Próba ćwiczeniowa</span>
+        </div>
+        <div id="experiment-screen">
+            <!-- State: Get Ready -->
+            <div id="exp-get-ready" class="exp-state">
+                <div class="exp-message">Przygotuj się</div>
+                <div class="exp-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            </div>
+            <!-- State: Stimulus -->
+            <div id="exp-stimulus" class="exp-state" style="display:none;">
+                <div id="stimulus-circle"></div>
+            </div>
+            <!-- State: Wait for Start -->
+            <div id="exp-wait-start" class="exp-state" style="display:none;">
+                <div class="exp-message">Odtwórz ten sam czas</div>
+                <div class="exp-hint">Naciśnij <kbd>SPACJA</kbd> aby rozpocząć</div>
+            </div>
+            <!-- State: Reproducing -->
+            <div id="exp-reproducing" class="exp-state" style="display:none;">
+                <div id="reproducing-ring"></div>
+                <div class="exp-hint">Naciśnij <kbd>SPACJA</kbd> gdy uznasz, że upłynął ten sam czas</div>
+            </div>
+            <!-- State: Trial Complete -->
+            <div id="exp-trial-complete" class="exp-state" style="display:none;">
+                <div class="exp-check">✓</div>
+                <div class="exp-hint">Odpowiedź zapisana</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ==================== THANK YOU ==================== -->
+    <section id="thank-you" class="section">
+        <div class="card card-wide fade-in">
+            <div class="card-icon">🎉</div>
+            <h2>Dziękujemy za udział w badaniu!</h2>
+            <p class="subtitle">Badanie zostało zakończone pomyślnie.</p>
+            <div class="results-summary" id="results-summary"></div>
+            <div id="save-status" class="save-status" style="display:none;"></div>
+            <button id="btn-download-csv" class="btn btn-primary btn-large">
+                📥 Pobierz kopię wyników (CSV)
+            </button>
+            <p class="footnote">Twoje wyniki zostały automatycznie zapisane do zbiorczego pliku na serwerze.<br>Przycisk powyżej pozwala pobrać kopię zapasową.<br><br>Twoje dane są anonimowe i będą wykorzystane wyłącznie do celów naukowych.<br>Dziękujemy za Twój wkład w badania naukowe!</p>
+        </div>
+    </section>
+
+    <!-- Scripts -->
+    <script src="js/demographic.js"></script>
+    <script src="js/asrs.js"></script>
+    <script src="js/zwlekanie.js"></script>
+    <script src="js/experiment.js"></script>
+    <script src="js/results.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
