@@ -61,6 +61,7 @@ body {
     background: var(--bg-primary);
     color: var(--text-primary);
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: hidden;
     line-height: 1.65;
     font-size: 15px;
@@ -94,7 +95,7 @@ body::before {
 /* ---------- Progress Bar ---------- */
 #progress-bar-container {
     position: fixed;
-    top: 0;
+    top: env(safe-area-inset-top, 0);
     left: 0;
     width: 100%;
     height: 3px;
@@ -127,7 +128,7 @@ body::before {
 #progress-text {
     position: fixed;
     top: 14px;
-    right: 28px;
+    right: calc(28px + env(safe-area-inset-right, 0px));
     font-size: 0.7rem;
     color: var(--text-muted);
     z-index: 1000;
@@ -141,7 +142,12 @@ body::before {
 .section {
     display: none;
     min-height: 100vh;
-    padding: 60px 20px 40px;
+    min-height: 100dvh;
+    padding:
+        calc(60px + env(safe-area-inset-top, 0px))
+        calc(20px + env(safe-area-inset-right, 0px))
+        calc(40px + env(safe-area-inset-bottom, 0px))
+        calc(20px + env(safe-area-inset-left, 0px));
     justify-content: center;
     align-items: center;
 }
@@ -324,6 +330,7 @@ kbd {
     letter-spacing: 0.02em;
     position: relative;
     overflow: hidden;
+    touch-action: manipulation;
 }
 
 .btn-primary {
@@ -366,13 +373,19 @@ kbd {
     margin-bottom: 24px;
 }
 
-.form-group > label:first-child {
+.form-group > label:first-child,
+.form-group > legend {
     display: block;
     font-weight: 600;
     font-size: 0.9rem;
     color: var(--text-primary);
     margin-bottom: 8px;
     letter-spacing: 0.01em;
+}
+
+fieldset.form-group {
+    min-width: 0;
+    border: 0;
 }
 
 input[type="number"],
@@ -450,6 +463,7 @@ select.input-error {
     transition: all var(--transition-fast);
     font-size: 0.92rem;
     color: var(--text-secondary);
+    touch-action: manipulation;
 }
 
 .radio-label:hover {
@@ -459,7 +473,11 @@ select.input-error {
 }
 
 .radio-label input[type="radio"] {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .radio-custom {
@@ -494,6 +512,11 @@ select.input-error {
     background: rgba(124, 58, 237, 0.08);
     border-color: rgba(124, 58, 237, 0.25);
     color: var(--text-primary);
+}
+
+.radio-label:has(input[type="radio"]:focus-visible) {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 
@@ -551,10 +574,15 @@ select.input-error {
 .option-chip {
     flex: 1;
     min-width: 80px;
+    position: relative;
 }
 
 .option-chip input[type="radio"] {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .option-chip label {
@@ -570,6 +598,7 @@ select.input-error {
     cursor: pointer;
     transition: all var(--transition-fast);
     line-height: 1.3;
+    touch-action: manipulation;
 }
 
 .option-chip label:hover {
@@ -584,6 +613,11 @@ select.input-error {
     color: var(--text-primary);
     box-shadow: 0 0 12px rgba(124, 58, 237, 0.15);
     font-weight: 600;
+}
+
+.option-chip input[type="radio"]:focus-visible + label {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 /* Zwlekanie numeric scale (1-5) */
@@ -611,7 +645,11 @@ select.input-error {
 }
 
 .scale-option input[type="radio"] {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .scale-option label {
@@ -628,6 +666,7 @@ select.input-error {
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: all var(--transition-fast);
+    touch-action: manipulation;
 }
 
 .scale-option label:hover {
@@ -641,6 +680,11 @@ select.input-error {
     border-color: transparent;
     color: #fff;
     box-shadow: 0 2px 12px rgba(124, 58, 237, 0.3);
+}
+
+.scale-option input[type="radio"]:focus-visible + label {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
 }
 
 .part-label {
@@ -670,7 +714,7 @@ select.input-error {
 
 #experiment-progress {
     position: absolute;
-    top: 24px;
+    top: calc(24px + env(safe-area-inset-top, 0px));
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -694,7 +738,13 @@ select.input-error {
     justify-content: center;
     width: 100%;
     height: 100vh;
+    height: 100dvh;
     position: relative;
+    padding:
+        env(safe-area-inset-top, 0px)
+        env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px)
+        env(safe-area-inset-left, 0px);
 }
 
 .exp-state {
@@ -945,4 +995,28 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
     -moz-appearance: textfield;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    body::before,
+    .fade-in,
+    .section.transitioning-out,
+    .exp-state,
+    .dot,
+    #stimulus-circle,
+    #reproducing-ring,
+    .exp-check {
+        animation: none !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

@@ -1,2 +1,4 @@
-pandas
-openpyxl
+fastapi==0.115.12
+uvicorn[standard]==0.34.3
+pydantic==2.11.5
+openpyxl==3.1.5

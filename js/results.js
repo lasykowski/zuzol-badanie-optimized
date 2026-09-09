@@ -15,20 +15,31 @@ const ResultsModule = (function () {
     'use strict';
 
     /**
-     * Generates a unique participant ID based on timestamp.
+     * Generates a cryptographically strong anonymous participant UUID.
      */
     function generateParticipantId() {
-        var now = new Date();
-        var parts = [
-            now.getFullYear(),
-            String(now.getMonth() + 1).padStart(2, '0'),
-            String(now.getDate()).padStart(2, '0'),
-            String(now.getHours()).padStart(2, '0'),
-            String(now.getMinutes()).padStart(2, '0'),
-            String(now.getSeconds()).padStart(2, '0')
-        ];
-        var random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-        return 'P' + parts.join('') + random;
+        var cryptoApi = window.crypto;
+        if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
+            return cryptoApi.randomUUID();
+        }
+        if (!cryptoApi || typeof cryptoApi.getRandomValues !== 'function') {
+            throw new Error('Bezpieczne generowanie identyfikatora nie jest dostępne.');
+        }
+
+        var bytes = new Uint8Array(16);
+        cryptoApi.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        var hex = Array.prototype.map.call(bytes, function (byte) {
+            return byte.toString(16).padStart(2, '0');
+        }).join('');
+        return [
+            hex.slice(0, 8),
+            hex.slice(8, 12),
+            hex.slice(12, 16),
+            hex.slice(16, 20),
+            hex.slice(20)
+        ].join('-');
     }
 
     /**
@@ -107,20 +118,28 @@ const ResultsModule = (function () {
             var trial = data.experiment[t] || {};
             var n = t + 1;
             headers.push(
+                'trial_' + n + '_trialNumber',
+                'trial_' + n + '_order',
                 'trial_' + n + '_targetMs',
+                'trial_' + n + '_actualStimulusMs',
                 'trial_' + n + '_reproducedMs',
                 'trial_' + n + '_errorMs',
                 'trial_' + n + '_absErrorMs',
                 'trial_' + n + '_relErrorPct',
-                'trial_' + n + '_ratio'
+                'trial_' + n + '_ratio',
+                'trial_' + n + '_tabHiddenDuringTrial'
             );
             values.push(
-                trial.targetMs || '',
-                trial.reproducedMs || '',
-                trial.errorMs || '',
-                trial.absoluteErrorMs || '',
-                trial.relativeErrorPct || '',
-                trial.ratio || ''
+                valueOrEmpty(trial.trialNumber),
+                valueOrEmpty(trial.order),
+                valueOrEmpty(trial.targetMs),
+                valueOrEmpty(trial.actualStimulusMs),
+                valueOrEmpty(trial.reproducedMs),
+                valueOrEmpty(trial.errorMs),
+                valueOrEmpty(trial.absoluteErrorMs),
+                valueOrEmpty(trial.relativeErrorPct),
+                valueOrEmpty(trial.ratio),
+                valueOrEmpty(trial.tabHiddenDuringTrial)
             );
         }
 
@@ -138,23 +157,42 @@ const ResultsModule = (function () {
         return headerLine + '\n' + valueLine + '\n';
     }
 
+    function valueOrEmpty(value) {
+        return value === null || typeof value === 'undefined' ? '' : value;
+    }
+
     /**
      * Sends data to the server to be appended to the collective CSV file.
      * @param {Object} data — all study data.
      * @returns {Promise<Object>} — server response.
      */
     function saveToServer(data) {
-        return fetch('/api/save-results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-        .then(function (response) {
-            if (!response.ok) {
-                throw new Error('HTTP ' + response.status);
-            }
-            return response.json();
-        })
+        var maxAttempts = 3;
+
+        function attemptSave(attempt) {
+            return fetch('/api/save-results', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            }).catch(function (error) {
+                if (attempt >= maxAttempts) {
+                    throw error;
+                }
+                var delayMs = 500 * Math.pow(2, attempt - 1);
+                return new Promise(function (resolve) {
+                    setTimeout(resolve, delayMs);
+                }).then(function () {
+                    return attemptSave(attempt + 1);
+                });
+            });
+        }
+
+        return attemptSave(1)
         .then(function (result) {
             console.log('[ResultsModule] Wyniki zapisane na serwerze:', result.message);
             showSaveStatus(true, result.message);
@@ -175,10 +213,10 @@ const ResultsModule = (function () {
         if (!statusEl) return;
         if (success) {
             statusEl.className = 'save-status save-success';
-            statusEl.innerHTML = '✅ ' + message;
+            statusEl.textContent = '✅ ' + message;
         } else {
             statusEl.className = 'save-status save-error';
-            statusEl.innerHTML = '⚠️ ' + message;
+            statusEl.textContent = '⚠️ ' + message;
         }
         statusEl.style.display = 'block';
     }

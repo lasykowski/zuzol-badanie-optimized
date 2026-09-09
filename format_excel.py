@@ -1,167 +1,130 @@
-"""
-format_excel.py
-Pomocniczy skrypt do konwersji surowego pliku CSV na ładnie sformatowany arkusz Excel (.xlsx) w pionie.
-Uczestnicy są reprezentowani jako kolumny (Uczestnik 1, Uczestnik 2 itd.),
-a zmienne/pytania są wierszami.
-"""
+"""Generate the study's vertically oriented, styled Excel workbook."""
 
-import os
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from __future__ import annotations
+
+import csv
+from pathlib import Path
+
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
-CSV_FILE = 'wyniki_badania.csv'
-EXCEL_FILE = 'wyniki_badania_sformatowane.xlsx'
-CSV_DELIMITER = ';'
+CSV_DELIMITER = ";"
 
 
-def generate_styled_excel(csv_path=CSV_FILE, excel_path=EXCEL_FILE):
-    """Konwertuje CSV na transponowany i sformatowany plik Excel (.xlsx) w pionie."""
-    if not os.path.exists(csv_path) or os.path.getsize(csv_path) == 0:
-        return False
+def _read_csv(csv_path: str | Path) -> tuple[list[str], list[dict]]:
+    with Path(csv_path).open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle, delimiter=CSV_DELIMITER)
+        return list(reader.fieldnames or []), list(reader)
 
-    try:
-        # 1. Wczytanie danych z CSV (z obsługą BOM i separatorem średnika)
-        df = pd.read_csv(csv_path, sep=CSV_DELIMITER, encoding='utf-8-sig')
 
-        # Transpozycja tabeli: zmienne stają się indeksami wierszy
-        df_transposed = df.transpose()
-        
-        # Nazywamy nagłówki kolumn: Uczestnik 1, Uczestnik 2, ...
-        column_names = []
-        for i in range(len(df)):
-            participant_id = df.iloc[i].get('participantId', f'Uczestnik_{i+1}')
-            column_names.append(str(participant_id))
-            
-        df_transposed.columns = column_names
-        df_transposed = df_transposed.reset_index()
-        df_transposed.rename(columns={'index': 'Zmienna'}, inplace=True)
+def _safe_excel_value(value):
+    if isinstance(value, str) and value.startswith(("=", "+", "-", "@")):
+        return "'" + value
+    return value
 
-        # Zapis do Excela (wersja surowa)
-        df_transposed.to_excel(excel_path, index=False)
 
-        # 2. Otwarcie za pomocą openpyxl do ostylowania
-        wb = load_workbook(excel_path)
-        ws = wb.active
-        ws.title = "Wyniki Badania"
+def generate_styled_excel(
+    *,
+    rows: list[dict] | None = None,
+    headers: list[str] | None = None,
+    excel_path: str | Path = "wyniki_badania_sformatowane.xlsx",
+    csv_path: str | Path | None = None,
+) -> bool:
+    """Write variables as rows and participants as columns."""
+    if rows is None or headers is None:
+        if csv_path is None or not Path(csv_path).is_file() or Path(csv_path).stat().st_size == 0:
+            return False
+        headers, rows = _read_csv(csv_path)
 
-        # Kolory wypełnień dla sekcji (zastosowane do kolumny ze zmiennymi)
-        fill_id = PatternFill(start_color="EAEAEA", end_color="EAEAEA", fill_type="solid")  # Szary dla ID/Timestamp
-        fill_demo = PatternFill(start_color="E6F2FF", end_color="E6F2FF", fill_type="solid")  # Jasnoniebieski dla Demografii
-        fill_asrs = PatternFill(start_color="E6F9E6", end_color="E6F9E6", fill_type="solid")  # Jasnozielony dla ASRS
-        fill_zwl = PatternFill(start_color="F2E6FF", end_color="F2E6FF", fill_type="solid")   # Jasnofioletowy dla Zwlekania
-        fill_exp = PatternFill(start_color="FFE6D9", end_color="FFE6D9", fill_type="solid")   # Jasnopomarańczowy dla Eksperymentu
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Wyniki Badania"
+    worksheet.append(
+        ["Zmienna"]
+        + [str(row.get("participantId") or f"Uczestnik_{index}") for index, row in enumerate(rows, 1)]
+    )
+    for header in headers:
+        worksheet.append([header] + [_safe_excel_value(row.get(header, "")) for row in rows])
 
-        # Tła dla naprzemiennych kolumn uczestników (pionowa zebra)
-        fill_col_even = PatternFill(start_color="FAFAFA", end_color="FAFAFA", fill_type="solid")
-        fill_col_odd = PatternFill(start_color="FFFFFF", end_color="FFFFFF", fill_type="solid")
+    section_fills = {
+        "id": PatternFill("solid", fgColor="EAEAEA"),
+        "demo": PatternFill("solid", fgColor="E6F2FF"),
+        "asrs": PatternFill("solid", fgColor="E6F9E6"),
+        "zwl": PatternFill("solid", fgColor="F2E6FF"),
+        "trial": PatternFill("solid", fgColor="FFE6D9"),
+    }
+    even_fill = PatternFill("solid", fgColor="FAFAFA")
+    odd_fill = PatternFill("solid", fgColor="FFFFFF")
+    header_fill = PatternFill("solid", fgColor="7C3AED")
+    thin_border = Border(
+        left=Side(style="thin", color="E0E0E0"),
+        right=Side(style="thin", color="E0E0E0"),
+        top=Side(style="thin", color="E0E0E0"),
+        bottom=Side(style="thin", color="E0E0E0"),
+    )
+    header_border = Border(
+        left=Side(style="thin", color="B0B0B0"),
+        right=Side(style="thin", color="B0B0B0"),
+        top=Side(style="medium", color="5D2EC0"),
+        bottom=Side(style="medium", color="5D2EC0"),
+    )
 
-        # Style tekstu
-        font_header_row = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
-        font_header_col = Font(name="Segoe UI", size=10, bold=True, color="000000")
-        font_data = Font(name="Segoe UI", size=10, color="000000")
+    worksheet.row_dimensions[1].height = 28
+    for cell in worksheet[1]:
+        cell.fill = header_fill
+        cell.font = Font(name="Segoe UI", size=10, bold=True, color="FFFFFF")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.border = header_border
 
-        # Fioletowy gradient/wypełnienie dla pierwszego wiersza (Nagłówek kolumn)
-        purple_header_fill = PatternFill(start_color="7C3AED", end_color="7C3AED", fill_type="solid")
+    demographic = {"age", "gender", "education", "adhdDiagnosis", "adhdMedication"}
+    for row_index in range(2, worksheet.max_row + 1):
+        worksheet.row_dimensions[row_index].height = 20
+        variable_cell = worksheet.cell(row_index, 1)
+        variable = str(variable_cell.value)
+        if variable in {"participantId", "timestamp"}:
+            variable_cell.fill = section_fills["id"]
+        elif variable in demographic:
+            variable_cell.fill = section_fills["demo"]
+        elif variable.startswith("asrs_"):
+            variable_cell.fill = section_fills["asrs"]
+        elif variable.startswith("zwl_") or variable == "zwlekanie_total":
+            variable_cell.fill = section_fills["zwl"]
+        elif variable.startswith("trial_"):
+            variable_cell.fill = section_fills["trial"]
+        variable_cell.font = Font(name="Segoe UI", size=10, bold=True)
+        variable_cell.alignment = Alignment(horizontal="left", vertical="center")
+        variable_cell.border = thin_border
 
-        # Cienkie obramowanie
-        thin_border = Border(
-            left=Side(style='thin', color='E0E0E0'),
-            right=Side(style='thin', color='E0E0E0'),
-            top=Side(style='thin', color='E0E0E0'),
-            bottom=Side(style='thin', color='E0E0E0')
+        numeric = (
+            variable == "age"
+            or variable.startswith(("asrs_", "zwl_", "trial_"))
+            or variable == "zwlekanie_total"
         )
+        for column_index in range(2, worksheet.max_column + 1):
+            cell = worksheet.cell(row_index, column_index)
+            cell.font = Font(name="Segoe UI", size=10)
+            cell.fill = even_fill if column_index % 2 == 0 else odd_fill
+            cell.border = thin_border
+            cell.alignment = Alignment(
+                horizontal="right" if numeric else "center", vertical="center"
+            )
+            if numeric and isinstance(cell.value, str):
+                try:
+                    cell.value = float(cell.value) if "." in cell.value else int(cell.value)
+                except ValueError:
+                    pass
 
-        header_border = Border(
-            left=Side(style='thin', color='B0B0B0'),
-            right=Side(style='thin', color='B0B0B0'),
-            top=Side(style='medium', color='5D2EC0'),
-            bottom=Side(style='medium', color='5D2EC0')
-        )
+    worksheet.freeze_panes = "B2"
+    for column in worksheet.columns:
+        letter = get_column_letter(column[0].column)
+        max_length = max((len(str(cell.value or "")) for cell in column), default=0)
+        worksheet.column_dimensions[letter].width = max(max_length + 4, 12)
 
-        # 3. Formatowanie pierwszego wiersza (nagłówki kolumn z ID uczestników)
-        ws.row_dimensions[1].height = 28
-        for col_idx in range(1, ws.max_column + 1):
-            cell = ws.cell(row=1, column=col_idx)
-            cell.fill = purple_header_fill
-            cell.font = font_header_row
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.border = header_border
-
-        # 4. Formatowanie danych w wierszach
-        for row_idx in range(2, ws.max_row + 1):
-            ws.row_dimensions[row_idx].height = 20
-            var_cell = ws.cell(row=row_idx, column=1)
-            var_name = str(var_cell.value)
-
-            # Wybór koloru sekcji dla komórki zmiennej (Kolumna A)
-            if var_name in ['participantId', 'timestamp']:
-                var_cell.fill = fill_id
-            elif var_name in ['age', 'gender', 'education', 'adhdDiagnosis', 'adhdMedication']:
-                var_cell.fill = fill_demo
-            elif var_name.startswith('asrs_'):
-                var_cell.fill = fill_asrs
-            elif var_name.startswith('zwl_') or var_name == 'zwlekanie_total':
-                var_cell.fill = fill_zwl
-            elif var_name.startswith('trial_'):
-                var_cell.fill = fill_exp
-
-            var_cell.font = font_header_col
-            var_cell.alignment = Alignment(horizontal="left", vertical="center")
-            var_cell.border = thin_border
-
-            # Formatowanie kolumn uczestników (pionowa zebra)
-            for col_idx in range(2, ws.max_column + 1):
-                cell = ws.cell(row=row_idx, column=col_idx)
-                cell.font = font_data
-                cell.fill = fill_col_even if col_idx % 2 == 0 else fill_col_odd
-                cell.border = thin_border
-
-                # Konwersja typów danych i wyrównanie wartości
-                val_str = str(cell.value or '')
-                
-                # Rzutowanie na int lub float
-                if var_name in ['age'] or var_name.startswith('asrs_') or var_name.startswith('zwl_') or var_name == 'zwlekanie_total':
-                    cell.alignment = Alignment(horizontal="right", vertical="center")
-                    try:
-                        cell.value = int(cell.value)
-                    except (ValueError, TypeError):
-                        pass
-                elif var_name.startswith('trial_'):
-                    cell.alignment = Alignment(horizontal="right", vertical="center")
-                    try:
-                        if '.' in val_str:
-                            cell.value = float(cell.value)
-                        else:
-                            cell.value = int(cell.value)
-                    except (ValueError, TypeError):
-                        pass
-                else:
-                    cell.alignment = Alignment(horizontal="center", vertical="center")
-
-        # 5. Zamrożenie pierwszego wiersza i pierwszej kolumny
-        ws.freeze_panes = 'B2'
-
-        # 6. Automatyczne dostosowanie szerokości kolumn
-        for col in ws.columns:
-            max_len = 0
-            col_letter = get_column_letter(col[0].column)
-            for cell in col:
-                val = str(cell.value or '')
-                max_len = max(max_len, len(val))
-            ws.column_dimensions[col_letter].width = max(max_len + 4, 12)
-
-        # Zapisz gotowy arkusz
-        wb.save(excel_path)
-        return True
-    except Exception as e:
-        print(f"[BLAD Excel] Nie udalo sie sformatowac Excela: {e}")
-        return False
+    Path(excel_path).parent.mkdir(parents=True, exist_ok=True)
+    workbook.save(excel_path)
+    return True
 
 
-if __name__ == '__main__':
-    if generate_styled_excel():
-        print(f"[OK] Pionowy arkusz Excel wygenerowany i sformatowany: {EXCEL_FILE}")
-    else:
-        print("[INFO] Brak pliku CSV lub plik jest pusty.")
+if __name__ == "__main__":
+    generate_styled_excel(csv_path="wyniki_badania.csv")

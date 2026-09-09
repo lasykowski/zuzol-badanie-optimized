@@ -43,11 +43,13 @@
     };
 
     var currentSectionIndex = 0;
+    var CHECKPOINT_KEY = 'time-reproduction-study-checkpoint-v1';
+    var CHECKPOINT_VERSION = 1;
 
     /**
      * Navigates to a section by ID.
      */
-    function goToSection(sectionId) {
+    function goToSection(sectionId, onShown) {
         // Hide current section with transition
         var currentSection = document.querySelector('.section.active');
         if (currentSection) {
@@ -57,9 +59,11 @@
 
                 // Show new section
                 showSection(sectionId);
+                if (typeof onShown === 'function') onShown();
             }, 280);
         } else {
             showSection(sectionId);
+            if (typeof onShown === 'function') onShown();
         }
     }
 
@@ -70,14 +74,21 @@
         section.classList.add('active');
 
         // Scroll to top
-        window.scrollTo({ top: 0, behavior: 'instant' });
+        window.scrollTo({ top: 0, behavior: 'auto' });
 
         // Update progress bar
         var progress = PROGRESS_MAP[sectionId];
         if (progress) {
-            document.getElementById('progress-bar').style.width = progress.pct + '%';
+            var progressBar = document.getElementById('progress-bar');
+            var progressContainer = document.getElementById('progress-bar-container');
+            progressBar.style.width = progress.pct + '%';
             document.getElementById('progress-text').textContent =
                 'Etap ' + progress.step + ' z ' + progress.total;
+            progressContainer.setAttribute('aria-valuenow', String(progress.pct));
+            progressContainer.setAttribute(
+                'aria-valuetext',
+                'Etap ' + progress.step + ' z ' + progress.total
+            );
         }
 
         // Manage body class for experiment fullscreen
@@ -98,13 +109,137 @@
         }
     }
 
+    function saveCheckpoint(safeSection) {
+        try {
+            sessionStorage.setItem(CHECKPOINT_KEY, JSON.stringify({
+                version: CHECKPOINT_VERSION,
+                safeSection: safeSection,
+                studyData: studyData
+            }));
+        } catch (error) {
+            console.warn('[App] Nie udało się zapisać checkpointu:', error);
+        }
+    }
+
+    function clearCheckpoint() {
+        try {
+            sessionStorage.removeItem(CHECKPOINT_KEY);
+        } catch (error) {
+            console.warn('[App] Nie udało się usunąć checkpointu:', error);
+        }
+    }
+
+    function isCompleteDemographic(data) {
+        return data && Number.isInteger(data.age) && data.age >= 18 && data.age <= 99 &&
+            typeof data.gender === 'string' && data.gender !== '' &&
+            typeof data.education === 'string' && data.education !== '' &&
+            typeof data.adhdDiagnosis === 'string' && data.adhdDiagnosis !== '' &&
+            typeof data.adhdMedication === 'string' && data.adhdMedication !== '';
+    }
+
+    function hasNumberedAnswers(answers, prefix, count, suffix) {
+        if (!answers || typeof answers !== 'object') return false;
+        suffix = suffix || '';
+        for (var i = 1; i <= count; i++) {
+            if (typeof answers[prefix + i + suffix] !== 'number') return false;
+        }
+        return true;
+    }
+
+    function isCompleteAsrs(data) {
+        return data && hasNumberedAnswers(data.answers, 'asrs_', 18) &&
+            typeof data.partA === 'number' &&
+            typeof data.partB === 'number' &&
+            typeof data.total === 'number';
+    }
+
+    function isCompleteZwlekanie(data) {
+        return data &&
+            hasNumberedAnswers(data.rawAnswers, 'zwl_', 40) &&
+            hasNumberedAnswers(data.scoredAnswers, 'zwl_', 40, '_scored') &&
+            typeof data.total === 'number';
+    }
+
+    function isCompleteExperiment(data) {
+        return Array.isArray(data) && data.length === 8 && data.every(function (trial, index) {
+            return trial && trial.trialNumber === index + 1 &&
+                trial.order === index + 1 &&
+                typeof trial.targetMs === 'number' &&
+                typeof trial.actualStimulusMs === 'number' &&
+                typeof trial.reproducedMs === 'number' &&
+                typeof trial.tabHiddenDuringTrial === 'boolean';
+        });
+    }
+
+    function getRecoverySection(checkpoint) {
+        if (!checkpoint || checkpoint.version !== CHECKPOINT_VERSION ||
+            !checkpoint.studyData ||
+            typeof checkpoint.studyData.participantId !== 'string' ||
+            !checkpoint.studyData.participantId ||
+            typeof checkpoint.studyData.timestamp !== 'string' ||
+            !checkpoint.studyData.timestamp) {
+            return null;
+        }
+
+        var data = checkpoint.studyData;
+        var safeSection = checkpoint.safeSection;
+        if (safeSection === 'demographic') return 'demographic';
+        if (!isCompleteDemographic(data.demographic)) return null;
+        if (safeSection === 'asrs') return 'asrs';
+        if (!isCompleteAsrs(data.asrs)) return null;
+        if (safeSection === 'zwlekanie') return 'zwlekanie';
+        if (!isCompleteZwlekanie(data.zwlekanie)) return null;
+        if (safeSection === 'experiment-intro') return 'experiment-intro';
+        if (safeSection === 'thank-you' && isCompleteExperiment(data.experiment)) {
+            return 'thank-you';
+        }
+        return null;
+    }
+
+    function recoverCheckpoint() {
+        var serialized;
+        try {
+            serialized = sessionStorage.getItem(CHECKPOINT_KEY);
+            if (!serialized) return null;
+            var checkpoint = JSON.parse(serialized);
+            var recoverySection = getRecoverySection(checkpoint);
+            if (!recoverySection) {
+                clearCheckpoint();
+                return null;
+            }
+            studyData = checkpoint.studyData;
+            return recoverySection;
+        } catch (error) {
+            clearCheckpoint();
+            return null;
+        }
+    }
+
+    function showRecoveredSection(sectionId) {
+        document.querySelectorAll('.section.active').forEach(function (section) {
+            section.classList.remove('active', 'transitioning-out');
+        });
+        showSection(sectionId);
+    }
+
+    function saveCompletedStudy() {
+        return ResultsModule.saveToServer(studyData).then(function (result) {
+            if (result && result.success !== false) {
+                clearCheckpoint();
+            }
+            return result;
+        });
+    }
+
     /**
      * Initializes all modules and event listeners.
      */
     function init() {
-        // Generate participant ID
-        studyData.participantId = ResultsModule.generateParticipantId();
-        studyData.timestamp = new Date().toISOString();
+        var recoverySection = recoverCheckpoint();
+        if (!recoverySection) {
+            studyData.participantId = ResultsModule.generateParticipantId();
+            studyData.timestamp = new Date().toISOString();
+        }
 
         // --- Render questionnaires ---
         ASRSModule.render();
@@ -113,6 +248,7 @@
         // --- Initialize experiment ---
         ExperimentModule.init(function (experimentResults) {
             studyData.experiment = experimentResults;
+            saveCheckpoint('thank-you');
 
             // Move to thank-you screen
             goToSection('thank-you');
@@ -121,17 +257,19 @@
             ResultsModule.displaySummary(studyData);
 
             // Automatically save to collective CSV on the server
-            ResultsModule.saveToServer(studyData);
+            saveCompletedStudy();
         });
 
         // --- Initialize demographic form ---
         DemographicModule.init(function (demographicData) {
             studyData.demographic = demographicData;
+            saveCheckpoint('asrs');
             goToSection('asrs');
         });
 
         // --- Welcome: Start button ---
         document.getElementById('btn-start').addEventListener('click', function () {
+            saveCheckpoint('demographic');
             goToSection('demographic');
         });
 
@@ -140,6 +278,7 @@
             var asrsData = ASRSModule.validate();
             if (asrsData) {
                 studyData.asrs = asrsData;
+                saveCheckpoint('zwlekanie');
                 goToSection('zwlekanie');
             }
         });
@@ -149,17 +288,19 @@
             var zwlekanieData = ZwlekanieModule.validate();
             if (zwlekanieData) {
                 studyData.zwlekanie = zwlekanieData;
+                saveCheckpoint('experiment-intro');
                 goToSection('experiment-intro');
             }
         });
 
         // --- Experiment Intro: Start button ---
         document.getElementById('btn-start-experiment').addEventListener('click', function () {
-            goToSection('experiment');
-            // Small delay to ensure section is visible before starting
-            setTimeout(function () {
+            var startButton = this;
+            if (startButton.disabled) return;
+            startButton.disabled = true;
+            goToSection('experiment', function () {
                 ExperimentModule.start();
-            }, 500);
+            });
         });
 
         // --- Download CSV button ---
@@ -167,15 +308,13 @@
             ResultsModule.downloadCSV(studyData);
         });
 
-        // --- Prevent spacebar from scrolling page ---
-        document.addEventListener('keydown', function (e) {
-            if (e.code === 'Space' || e.key === ' ') {
-                var activeSection = SECTIONS[currentSectionIndex];
-                if (activeSection === 'experiment') {
-                    e.preventDefault();
-                }
+        if (recoverySection) {
+            showRecoveredSection(recoverySection);
+            if (recoverySection === 'thank-you') {
+                ResultsModule.displaySummary(studyData);
+                saveCompletedStudy();
             }
-        });
+        }
     }
 
     // Initialize when DOM is ready

@@ -12,7 +12,7 @@
 </head>
 <body>
     <!-- Progress Bar -->
-    <div id="progress-bar-container">
+    <div id="progress-bar-container" role="progressbar" aria-label="Postęp badania" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="Etap 1 z 5">
         <div id="progress-bar"></div>
         <div id="progress-text">Etap 1 z 5</div>
     </div>
@@ -20,7 +20,7 @@
     <!-- ==================== WELCOME ==================== -->
     <section id="welcome" class="section active">
         <div class="card card-wide fade-in">
-            <div class="card-icon">🧠</div>
+            <div class="card-icon" aria-hidden="true">🧠</div>
             <h1>Badanie Reprodukcji Czasu</h1>
             <p class="subtitle">Badanie naukowe na potrzeby pracy magisterskiej</p>
             <div class="info-box">
@@ -50,8 +50,8 @@
                     <input type="number" id="age" min="18" max="99" placeholder="np. 25" required>
                     <span class="error-msg" id="age-error"></span>
                 </div>
-                <div class="form-group">
-                    <label>Płeć</label>
+                <fieldset class="form-group">
+                    <legend>Płeć</legend>
                     <div class="radio-group" id="gender-group">
                         <label class="radio-label">
                             <input type="radio" name="gender" value="kobieta" required>
@@ -70,7 +70,7 @@
                         </label>
                     </div>
                     <span class="error-msg" id="gender-error"></span>
-                </div>
+                </fieldset>
                 <div class="form-group">
                     <label for="education">Wykształcenie</label>
                     <select id="education" required>
@@ -83,8 +83,8 @@
                     </select>
                     <span class="error-msg" id="education-error"></span>
                 </div>
-                <div class="form-group">
-                    <label>Czy posiadasz diagnozę ADHD?</label>
+                <fieldset class="form-group">
+                    <legend>Czy posiadasz diagnozę ADHD?</legend>
                     <div class="radio-group" id="adhd-diagnosis-group">
                         <label class="radio-label">
                             <input type="radio" name="adhd-diagnosis" value="tak" required>
@@ -98,9 +98,9 @@
                         </label>
                     </div>
                     <span class="error-msg" id="adhd-diagnosis-error"></span>
-                </div>
-                <div class="form-group">
-                    <label>Czy przyjmujesz leki na ADHD?</label>
+                </fieldset>
+                <fieldset class="form-group">
+                    <legend>Czy przyjmujesz leki na ADHD?</legend>
                     <div class="radio-group" id="adhd-medication-group">
                         <label class="radio-label">
                             <input type="radio" name="adhd-medication" value="tak" required>
@@ -114,7 +114,7 @@
                         </label>
                     </div>
                     <span class="error-msg" id="adhd-medication-error"></span>
-                </div>
+                </fieldset>
                 <button type="submit" class="btn btn-primary">Dalej</button>
             </form>
         </div>
@@ -162,7 +162,7 @@
     <!-- ==================== EXPERIMENT INTRO ==================== -->
     <section id="experiment-intro" class="section">
         <div class="card card-wide fade-in">
-            <div class="card-icon">⏱️</div>
+            <div class="card-icon" aria-hidden="true">⏱️</div>
             <h2>Zadanie eksperymentalne</h2>
             <h3>Reprodukcja czasu</h3>
             <div class="info-box">
@@ -178,7 +178,7 @@
                 <p>Wykonasz łącznie <strong>8 prób</strong>.</p>
 
                 <div class="warning-box">
-                    <strong>⚠️ Ważne:</strong> Nie korzystaj z żadnych zegarków, stoperów ani innych pomocy. Polegaj wyłącznie na swoim wewnętrznym wyczuciu czasu. Nie licz w myślach sekund.
+                    <strong><span aria-hidden="true">⚠️</span> Ważne:</strong> Nie korzystaj z żadnych zegarków, stoperów ani innych pomocy. Polegaj wyłącznie na swoim wewnętrznym wyczuciu czasu. Nie licz w myślach sekund.
                 </div>
 
                 <p>Najpierw wykonasz <strong>1 próbę ćwiczeniową</strong>, która nie będzie uwzględniona w wynikach.</p>
@@ -192,7 +192,7 @@
         <div id="experiment-progress">
             <span id="trial-counter">Próba ćwiczeniowa</span>
         </div>
-        <div id="experiment-screen">
+        <div id="experiment-screen" role="status" aria-live="polite" aria-atomic="true">
             <!-- State: Get Ready -->
             <div id="exp-get-ready" class="exp-state">
                 <div class="exp-message">Przygotuj się</div>
@@ -218,7 +218,7 @@
             </div>
             <!-- State: Trial Complete -->
             <div id="exp-trial-complete" class="exp-state" style="display:none;">
-                <div class="exp-check">✓</div>
+                <div class="exp-check" aria-hidden="true">✓</div>
                 <div class="exp-hint">Odpowiedź zapisana</div>
             </div>
         </div>
@@ -227,24 +227,24 @@
     <!-- ==================== THANK YOU ==================== -->
     <section id="thank-you" class="section">
         <div class="card card-wide fade-in">
-            <div class="card-icon">🎉</div>
+            <div class="card-icon" aria-hidden="true">🎉</div>
             <h2>Dziękujemy za udział w badaniu!</h2>
             <p class="subtitle">Badanie zostało zakończone pomyślnie.</p>
             <div class="results-summary" id="results-summary"></div>
-            <div id="save-status" class="save-status" style="display:none;"></div>
+            <div id="save-status" class="save-status" role="status" aria-live="polite" style="display:none;"></div>
             <button id="btn-download-csv" class="btn btn-primary btn-large">
-                📥 Pobierz kopię wyników (CSV)
+                <span aria-hidden="true">📥</span> Pobierz kopię wyników (CSV)
             </button>
             <p class="footnote">Twoje wyniki zostały automatycznie zapisane do zbiorczego pliku na serwerze.<br>Przycisk powyżej pozwala pobrać kopię zapasową.<br><br>Twoje dane są anonimowe i będą wykorzystane wyłącznie do celów naukowych.<br>Dziękujemy za Twój wkład w badania naukowe!</p>
         </div>
     </section>
 
     <!-- Scripts -->
-    <script src="js/demographic.js"></script>
-    <script src="js/asrs.js"></script>
-    <script src="js/zwlekanie.js"></script>
-    <script src="js/experiment.js"></script>
-    <script src="js/results.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/demographic.js" defer></script>
+    <script src="js/asrs.js" defer></script>
+    <script src="js/zwlekanie.js" defer></script>
+    <script src="js/experiment.js" defer></script>
+    <script src="js/results.js" defer></script>
+    <script src="js/app.js" defer></script>
 </body>
 </html>

@@ -29,6 +29,8 @@ const ExperimentModule = (function () {
     var startReproductionTime = null;
     var isPractice = false;
     var onCompleteCallback = null;
+    var tabHiddenDuringTrial = false;
+    var initialized = false;
 
     // DOM refs
     var stateElements = {};
@@ -53,8 +55,13 @@ const ExperimentModule = (function () {
         };
         trialCounter = document.getElementById('trial-counter');
 
-        // Keyboard handler
+        if (initialized) {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
         document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        initialized = true;
     }
 
     /**
@@ -75,18 +82,26 @@ const ExperimentModule = (function () {
      * Starts the experiment (practice trial first, then 8 real trials).
      */
     function start() {
+        if (state !== 'IDLE') {
+            return false;
+        }
+
+        clearAllTimeouts();
         trials = shuffle(TARGET_INTERVALS);
         results = [];
         currentTrialIndex = -1; // -1 = practice trial
         isPractice = true;
 
         runTrial(PRACTICE_INTERVAL);
+        return true;
     }
 
     /**
      * Runs a single trial with the given target interval.
      */
     function runTrial(targetMs) {
+        tabHiddenDuringTrial = document.hidden;
+
         // Update counter
         if (isPractice) {
             trialCounter.textContent = 'Próba ćwiczeniowa';
@@ -128,7 +143,15 @@ const ExperimentModule = (function () {
      */
     function handleKeyDown(e) {
         if (e.code !== 'Space' && e.key !== ' ') return;
-        e.preventDefault(); // Prevent page scroll
+        var experimentSection = document.getElementById('experiment');
+        var isExperimentActive = experimentSection &&
+            experimentSection.classList.contains('active');
+        if (!isExperimentActive || (state !== 'WAIT_START' && state !== 'REPRODUCING')) {
+            return;
+        }
+
+        e.preventDefault(); // Prevent page scroll only when Space controls the experiment
+        if (e.repeat) return;
 
         if (state === 'WAIT_START') {
             // Start reproduction
@@ -149,13 +172,15 @@ const ExperimentModule = (function () {
 
                 results.push({
                     trialNumber:       currentTrialIndex + 1,
+                    order:             currentTrialIndex + 1,
                     targetMs:          target,
                     actualStimulusMs:  Math.round(runTrial._actualStimulus),
                     reproducedMs:      Math.round(reproducedDuration),
                     errorMs:           Math.round(error),
                     absoluteErrorMs:   Math.round(Math.abs(error)),
                     relativeErrorPct:  parseFloat((error / target * 100).toFixed(2)),
-                    ratio:             parseFloat((reproducedDuration / target).toFixed(4))
+                    ratio:             parseFloat((reproducedDuration / target).toFixed(4)),
+                    tabHiddenDuringTrial: tabHiddenDuringTrial
                 });
             }
 
@@ -182,6 +207,17 @@ const ExperimentModule = (function () {
     }
 
     /**
+     * Records loss of visibility without changing any experiment timing.
+     */
+    function handleVisibilityChange() {
+        if (!document.hidden) return;
+        if (state === 'GET_READY' || state === 'STIMULUS' ||
+            state === 'WAIT_START' || state === 'REPRODUCING') {
+            tabHiddenDuringTrial = true;
+        }
+    }
+
+    /**
      * Shows only the specified state element, hides others.
      */
     function showState(stateName) {
@@ -203,6 +239,8 @@ const ExperimentModule = (function () {
     function finish() {
         state = 'FINISHED';
         document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        initialized = false;
         clearAllTimeouts();
 
         if (typeof onCompleteCallback === 'function') {

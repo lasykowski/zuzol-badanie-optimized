@@ -1,30 +1,48 @@
-version: "3.8"
-
 services:
   zuzol-badanie:
     build:
       context: .
       dockerfile: Dockerfile
-    image: zuzol-badanie:latest
+    image: ${APP_IMAGE:-zuzol-badanie:local}
     container_name: zuzol-badanie
     restart: unless-stopped
-    ports:
-      - "67:8080"
+    expose:
+      - "8080"
     volumes:
-      # Persist CSV results and generated Excel outside the container
       - zuzol-data:/app/data
     environment:
-      - PYTHONUNBUFFERED=1
-      - DATA_DIR=/app/data
+      PYTHONUNBUFFERED: "1"
+      DATA_DIR: /app/data
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES:-65536}
+    networks:
+      - npm-proxy
+    read_only: true
+    tmpfs:
+      - /tmp:size=128m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    pids_limit: 128
+    mem_limit: ${APP_MEMORY_LIMIT:-512m}
+    cpus: ${APP_CPU_LIMIT:-1.0}
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/')"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health', timeout=3)"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 10s
-    labels:
-      - "com.centurylinklabs.watchtower.enable=true"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   zuzol-data:
     driver: local
+
+networks:
+  npm-proxy:
+    external: true
+    name: ${NPM_NETWORK:-npm_default}
