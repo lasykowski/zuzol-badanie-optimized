@@ -77,9 +77,9 @@ proxy_send_timeout 120s;
 Po wdrożeniu sprawdź:
 
 ```text
-https://twoja-domena.example/health
-https://twoja-domena.example/api/download/csv
-https://twoja-domena.example/api/download/excel
+https://www.zuza.rel.pl/health
+https://www.zuza.rel.pl/api/download/csv
+https://www.zuza.rel.pl/api/download/excel
 ```
 
 ### 4. Ograniczenie liczby zapisów w NPM
