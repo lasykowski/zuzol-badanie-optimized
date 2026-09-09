@@ -29,12 +29,9 @@ będzie dostępna pod `http://127.0.0.1:8080`, a baza w `data/`.
 
 1. Utwórz rekord `A` domeny wskazujący na publiczny adres IP instancji Oracle.
 2. W Oracle Network Security List/NSG otwórz TCP 80 i 443 do Nginx Proxy
-   Managera. Nie otwieraj portu 8080 aplikacji.
-3. Sprawdź nazwę sieci Dockera, w której działa NPM:
-
-   ```bash
-   docker inspect <nazwa-kontenera-npm> --format '{{range $key, $value := .NetworkSettings.Networks}}{{$key}}{{"\n"}}{{end}}'
-   ```
+   Managera. Nie otwieraj publicznie portu 67 aplikacji.
+3. Sprawdź prywatny adres IP instancji Oracle (zwykle `10.x.x.x`). NPM będzie
+   łączył się z tym adresem na porcie 67.
 
 ### 2. Stack w Portainerze
 
@@ -45,8 +42,8 @@ plik `docker-compose.yml`.
 Dodaj zmienne środowiskowe:
 
 ```dotenv
-NPM_NETWORK=nazwa_sieci_z_poprzedniego_kroku
 APP_IMAGE=zuzol-badanie:local
+APP_PORT=67
 MAX_BODY_BYTES=65536
 APP_MEMORY_LIMIT=512m
 APP_CPU_LIMIT=1.0
@@ -62,8 +59,8 @@ W **Hosts → Proxy Hosts → Add Proxy Host** ustaw:
 
 - Domain Names: właściwa domena, np. `badanie.example.pl`
 - Scheme: `http`
-- Forward Hostname/IP: `zuzol-badanie`
-- Forward Port: `8080`
+- Forward Hostname/IP: prywatny adres IP instancji Oracle, np. `10.0.0.123`
+- Forward Port: `67`
 - Websockets Support: wyłączone
 - Block Common Exploits: włączone
 
@@ -95,8 +92,8 @@ limit_req_zone $binary_remote_addr zone=study_save:10m rate=10r/m;
 ```
 
 Zrestartuj NPM. Następnie w Proxy Host dodaj **Custom Location** dla
-`/api/save-results`, kierowaną do `http://zuzol-badanie:8080`, a w jej
-konfiguracji Advanced wpisz:
+`/api/save-results`, kierowaną do prywatnego adresu IP instancji Oracle na
+porcie `67`, a w jej konfiguracji Advanced wpisz:
 
 ```nginx
 limit_req zone=study_save burst=3 nodelay;

@@ -6,16 +6,14 @@ services:
     image: ${APP_IMAGE:-zuzol-badanie:local}
     container_name: zuzol-badanie
     restart: unless-stopped
-    expose:
-      - "8080"
+    ports:
+      - "${APP_PORT:-67}:8080"
     volumes:
       - zuzol-data:/app/data
     environment:
       PYTHONUNBUFFERED: "1"
       DATA_DIR: /app/data
       MAX_BODY_BYTES: ${MAX_BODY_BYTES:-65536}
-    networks:
-      - npm-proxy
     read_only: true
     tmpfs:
       - /tmp:size=128m,mode=1777
@@ -41,8 +39,3 @@ services:
 volumes:
   zuzol-data:
     driver: local
-
-networks:
-  npm-proxy:
-    external: true
-    name: ${NPM_NETWORK:-npm_default}
