@@ -10,18 +10,13 @@ services:
     ports:
       - "${APP_PORT:-67}:8080"
     volumes:
-      - zuzol-data:/app/data
+      - zuzol-data:/app/data:rw
     environment:
       PYTHONUNBUFFERED: "1"
       DATA_DIR: /app/data
       MAX_BODY_BYTES: ${MAX_BODY_BYTES:-65536}
-    read_only: true
     tmpfs:
       - /tmp:size=128m,mode=1777
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
     pids_limit: 128
     mem_limit: ${APP_MEMORY_LIMIT:-512m}
     cpus: ${APP_CPU_LIMIT:-1.0}
