@@ -6,6 +6,7 @@ services:
     image: ${APP_IMAGE:-zuzol-badanie:local}
     container_name: zuzol-badanie
     restart: unless-stopped
+    user: "0:0"
     ports:
       - "${APP_PORT:-67}:8080"
     volumes:

@@ -303,11 +303,6 @@
             });
         });
 
-        // --- Download CSV button ---
-        document.getElementById('btn-download-csv').addEventListener('click', function () {
-            ResultsModule.downloadCSV(studyData);
-        });
-
         if (recoverySection) {
             showRecoveredSection(recoverySection);
             if (recoverySection === 'thank-you') {
