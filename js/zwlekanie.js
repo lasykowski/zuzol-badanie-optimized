@@ -15,6 +15,15 @@ const ZwlekanieModule = (function () {
     // Items with reversed scoring (positive statements)
     var REVERSED_ITEMS = [1, 11, 13, 14, 16, 21, 23, 25, 27, 28, 29, 30, 32, 33, 36, 37, 38, 39];
 
+    // Text descriptions shown next to each scale value (index = value - 1)
+    var SCALE_LABELS = [
+        'Zupełnie taki/a nie jestem',
+        'Raczej taki/a nie jestem',
+        'Trudno powiedzieć',
+        'Trochę taki/a jestem',
+        'Właśnie taki/a jestem'
+    ];
+
     var QUESTIONS = [
         'Wykorzystuję „okienka" w zajęciach, by wykonać zadania przewidziane na wieczór.',
         'W chorobliwy sposób marnotrawię czas.',
@@ -71,7 +80,8 @@ const ZwlekanieModule = (function () {
     }
 
     /**
-     * Creates a question block with a 1–5 numeric scale.
+     * Creates a question block with a vertical 1–5 scale,
+     * each value accompanied by its text description.
      */
     function createQuestionBlock(questionNumber, questionText) {
         var block = document.createElement('div');
@@ -90,7 +100,7 @@ const ZwlekanieModule = (function () {
         block.appendChild(textDiv);
 
         var scaleRow = document.createElement('div');
-        scaleRow.className = 'scale-row';
+        scaleRow.className = 'scale-list';
 
         for (var v = 1; v <= 5; v++) {
             var option = document.createElement('div');
@@ -105,7 +115,17 @@ const ZwlekanieModule = (function () {
 
             var label = document.createElement('label');
             label.setAttribute('for', inputId);
-            label.textContent = v;
+
+            var valueSpan = document.createElement('span');
+            valueSpan.className = 'scale-value';
+            valueSpan.textContent = v;
+
+            var descSpan = document.createElement('span');
+            descSpan.className = 'scale-desc';
+            descSpan.textContent = SCALE_LABELS[v - 1];
+
+            label.appendChild(valueSpan);
+            label.appendChild(descSpan);
 
             option.appendChild(input);
             option.appendChild(label);

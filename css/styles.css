@@ -620,24 +620,11 @@ select.input-error {
     outline-offset: 2px;
 }
 
-/* Zwlekanie numeric scale (1-5) */
-.scale-legend {
+/* Zwlekanie scale (1-5): vertical list, each value with its text description */
+.scale-list {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 16px;
-    padding: 16px 20px;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
-    margin-bottom: 24px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.scale-row {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .scale-option {
@@ -655,11 +642,10 @@ select.input-error {
 .scale-option label {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 44px;
-    height: 44px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    gap: 12px;
+    padding: 8px 12px;
+    font-size: 0.88rem;
+    font-weight: 500;
     color: var(--text-muted);
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
@@ -669,6 +655,27 @@ select.input-error {
     touch-action: manipulation;
 }
 
+.scale-value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.scale-desc {
+    flex: 1;
+    line-height: 1.4;
+}
+
 .scale-option label:hover {
     background: rgba(124, 58, 237, 0.08);
     border-color: rgba(124, 58, 237, 0.2);
@@ -676,10 +683,16 @@ select.input-error {
 }
 
 .scale-option input[type="radio"]:checked + label {
+    background: rgba(124, 58, 237, 0.12);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.2);
+}
+
+.scale-option input[type="radio"]:checked + label .scale-value {
     background: var(--accent-gradient);
     border-color: transparent;
     color: #fff;
-    box-shadow: 0 2px 12px rgba(124, 58, 237, 0.3);
 }
 
 .scale-option input[type="radio"]:focus-visible + label {
@@ -769,6 +782,12 @@ select.input-error {
     color: var(--text-heading);
     letter-spacing: -0.01em;
     text-align: center;
+}
+
+.exp-message-small {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-secondary);
 }
 
 .exp-hint {
@@ -962,11 +981,6 @@ select.input-error {
 
     .option-chip {
         min-width: auto;
-    }
-
-    .scale-legend {
-        flex-direction: column;
-        gap: 4px;
     }
 
     #stimulus-circle,

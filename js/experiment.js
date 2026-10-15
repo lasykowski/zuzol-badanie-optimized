@@ -5,7 +5,9 @@
  * Flow per trial:
  *   GET_READY (3s) → STIMULUS (target duration) → WAIT_START → REPRODUCING → TRIAL_COMPLETE (2s)
  *
- * Intervals: 5s, 15s, 30s, 45s — each presented twice = 8 trials.
+ * Intervals: 5s, 10s, 15s, 30s — each presented twice = 8 trials.
+ * (Maximum interval reduced from 45s to 30s after pilot feedback —
+ *  the 45s trials were perceived as excessively long.)
  * Order: randomized (Fisher-Yates shuffle).
  * Includes 1 practice trial (3s) not counted in results.
  *
@@ -16,7 +18,7 @@ const ExperimentModule = (function () {
     'use strict';
 
     // Configuration
-    var TARGET_INTERVALS = [5000, 15000, 30000, 45000, 5000, 15000, 30000, 45000];
+    var TARGET_INTERVALS = [5000, 10000, 15000, 30000, 5000, 10000, 15000, 30000];
     var PRACTICE_INTERVAL = 3000;
     var GET_READY_DURATION = 3000;
     var TRIAL_COMPLETE_PAUSE = 2000;

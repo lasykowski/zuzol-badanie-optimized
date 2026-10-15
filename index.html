@@ -24,16 +24,10 @@
             <h1>Badanie Reprodukcji Czasu</h1>
             <p class="subtitle">Badanie naukowe na potrzeby pracy magisterskiej</p>
             <div class="info-box">
-                <p>Dziękujemy za zainteresowanie udziałem w badaniu. Składa się ono z kilku etapów:</p>
-                <ol>
-                    <li>Dane demograficzne</li>
-                    <li>Kwestionariusz ASRS v1.1 (18 pytań)</li>
-                    <li>Kwestionariusz Zwlekania (40 pytań)</li>
-                    <li>Zadanie eksperymentalne — reprodukcja czasu (8 prób)</li>
-                </ol>
+                <p>Dziękujemy za zainteresowanie udziałem w badaniu. Składa się ono z <strong>kilku krótkich pytań o Tobie</strong>, <strong>zestawu stwierdzeń</strong>, przy których zaznaczasz, w jakim stopniu Cię opisują, oraz <strong>krótkiego zadania</strong> polegającego na odtwarzaniu długości czasu. Przed każdym etapem otrzymasz dokładną instrukcję.</p>
                 <p>Całe badanie zajmie około <strong>20–30 minut</strong>.</p>
                 <p>Twoje dane są <strong>anonimowe</strong> i będą wykorzystane wyłącznie do celów naukowych.</p>
-                <p class="text-muted">Do wykonania zadania eksperymentalnego potrzebna jest <strong>klawiatura</strong> (klawisz SPACJA).</p>
+                <p class="text-muted">Do wykonania zadania końcowego potrzebna jest <strong>klawiatura</strong> — będziesz <strong>krótko naciskać i puszczać</strong> klawisz <kbd>SPACJA</kbd> (bez przytrzymywania). Szczegółową instrukcję zobaczysz tuż przed zadaniem.</p>
             </div>
             <button id="btn-start" class="btn btn-primary">Rozpocznij badanie</button>
         </div>
@@ -145,14 +139,7 @@
     <section id="zwlekanie" class="section">
         <div class="card card-wide fade-in">
             <h2>Kwestionariusz Zwlekania</h2>
-            <p class="section-desc">Poniżej znajduje się 40 stwierdzeń. Proszę zaznaczyć przy każdym stwierdzeniu, w jakim stopniu ono Panią/Pana charakteryzuje.</p>
-            <div class="scale-legend">
-                <span>1 — Zupełnie taki/a nie jestem</span>
-                <span>2 — Raczej taki/a nie jestem</span>
-                <span>3 — Trudno powiedzieć</span>
-                <span>4 — Trochę taki/a jestem</span>
-                <span>5 — Właśnie taki/a jestem</span>
-            </div>
+            <p class="section-desc">Poniżej znajduje się 40 stwierdzeń. Proszę zaznaczyć przy każdym stwierdzeniu, w jakim stopniu ono Panią/Pana charakteryzuje, wybierając jedną z pięciu odpowiedzi.</p>
             <div id="zwlekanie-questions"></div>
             <span class="error-msg" id="zwlekanie-error"></span>
             <button id="btn-zwlekanie-next" class="btn btn-primary">Dalej</button>
@@ -170,11 +157,16 @@
                 <h4>Przebieg każdej próby:</h4>
                 <ol>
                     <li>Na ekranie pojawi się komunikat <strong>„Przygotuj się"</strong>.</li>
-                    <li>Pojawi się <strong>bodziec wizualny</strong> (koło) — zapamiętaj, jak długo jest wyświetlany.</li>
+                    <li>Pojawi się <strong>bodziec wizualny</strong> (koło) — zapamiętaj, jak długo jest wyświetlany. W tym czasie <strong>nic nie naciskaj</strong>.</li>
                     <li>Po zniknięciu bodźca pojawi się komunikat <strong>„Odtwórz ten sam czas"</strong>.</li>
-                    <li>Naciśnij klawisz <kbd>SPACJA</kbd>, aby <strong>rozpocząć</strong> odtwarzanie czasu.</li>
-                    <li>Gdy uznasz, że upłynął taki sam czas jak wcześniej — naciśnij <kbd>SPACJA</kbd> ponownie.</li>
+                    <li><strong>Naciśnij i od razu puść</strong> klawisz <kbd>SPACJA</kbd> — to <strong>uruchamia</strong> odmierzanie czasu. Na ekranie pojawi się pulsujące koło.</li>
+                    <li>Odczekaj tyle, ile Twoim zdaniem trwał bodziec, a następnie <strong>naciśnij i puść</strong> <kbd>SPACJA</kbd> <strong>drugi raz</strong> — to <strong>kończy</strong> odmierzanie.</li>
                 </ol>
+
+                <div class="warning-box">
+                    <strong><span aria-hidden="true">👆</span> Jak naciskać:</strong> Klawisz <kbd>SPACJA</kbd> naciskasz <strong>dwa razy krótko</strong> — raz na start, raz na stop. <strong>Nie przytrzymuj</strong> klawisza przez czas odtwarzania — liczy się czas <strong>pomiędzy</strong> pierwszym a drugim naciśnięciem.
+                </div>
+
                 <p>Wykonasz łącznie <strong>8 prób</strong>.</p>
 
                 <div class="warning-box">
@@ -209,12 +201,13 @@
             <!-- State: Wait for Start -->
             <div id="exp-wait-start" class="exp-state" style="display:none;">
                 <div class="exp-message">Odtwórz ten sam czas</div>
-                <div class="exp-hint">Naciśnij <kbd>SPACJA</kbd> aby rozpocząć</div>
+                <div class="exp-hint">Naciśnij i puść <kbd>SPACJA</kbd>, aby rozpocząć odmierzanie</div>
             </div>
             <!-- State: Reproducing -->
             <div id="exp-reproducing" class="exp-state" style="display:none;">
                 <div id="reproducing-ring"></div>
-                <div class="exp-hint">Naciśnij <kbd>SPACJA</kbd> gdy uznasz, że upłynął ten sam czas</div>
+                <div class="exp-message exp-message-small">Czas jest odmierzany…</div>
+                <div class="exp-hint">Naciśnij i puść <kbd>SPACJA</kbd> ponownie, gdy uznasz, że upłynął ten sam czas</div>
             </div>
             <!-- State: Trial Complete -->
             <div id="exp-trial-complete" class="exp-state" style="display:none;">
